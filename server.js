@@ -77,7 +77,7 @@ app.post('/create-video', async (req, res) => {
       fs.unlinkSync(listFile);
       res.json({
         success: true,
-        url: `http://localhost:3000/outputs/${outputId}.mp4`
+        url: `https://pixelreel.onrender.com/outputs/${outputId}.mp4`
       });
     })
     .on('error', (err) => {
