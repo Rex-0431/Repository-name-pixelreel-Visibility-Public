@@ -1121,6 +1121,20 @@
   }
 
   async function createVideo(files) {
+    async function createVideo(file) {
+  const formData = new FormData();
+
+  formData.append('image', file);
+  formData.append('prompt', document.getElementById('promptInput').value);
+
+  const res = await fetch(BACKEND + '/generate-video', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await res.json();
+  return data.url;
+}
     const text = document.getElementById('textInput').value;
     const res = await fetch(BACKEND + '/create-video', {
       method: 'POST',
