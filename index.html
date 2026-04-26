@@ -1052,10 +1052,16 @@
   }
 
   function togglePlay() {
+    if (images.length === 0) {
+      alert('Please upload images first');
+      return;
+    }
     if (isPlaying) { stopPlay(); return; }
-    if (images.length === 0) return;
     isPlaying = true;
     document.getElementById('playBtn').textContent = '⏸ Pause';
+    document.getElementById('previewEmpty').style.display = 'none';
+    document.getElementById('previewImg').style.display = 'block';
+    document.getElementById('previewImg').src = images[0].src;
     let elapsed = 0;
     const total = images.length * duration;
     showSlide(0);
