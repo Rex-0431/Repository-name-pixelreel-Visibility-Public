@@ -1027,59 +1027,73 @@
   }
 
   function buildPreview() {
+    stopPlay();
+    document.getElementById('timelineFill').style.width = '0%';
+    document.getElementById('timeDisplay').textContent = '0:00';
     if (images.length === 0) {
       document.getElementById('previewEmpty').style.display = 'flex';
       document.getElementById('previewImg').style.display = 'none';
+      document.getElementById('previewOverlay').textContent = '';
+      document.getElementById('summaryBox').innerHTML = 'No images uploaded yet.';
       return;
     }
     document.getElementById('previewEmpty').style.display = 'none';
-    showSlide(0);
+    document.getElementById('previewImg').style.display = 'block';
+    document.getElementById('previewImg').src = images[0].src;
+    currentSlide = 0;
+    const text = document.getElementById('textInput').value;
+    document.getElementById('previewOverlay').textContent = text || '';
     const total = images.length * duration;
     const mins = Math.floor(total / 60);
     const secs = total % 60;
-    const text = document.getElementById('textInput').value;
     document.getElementById('summaryBox').innerHTML =
       `<strong>${images.length}</strong> slides &nbsp;·&nbsp; <strong>${duration}s</strong> each &nbsp;·&nbsp; Total <strong>${mins}:${secs.toString().padStart(2,'0')}</strong> &nbsp;·&nbsp; Music: <strong>${selectedMusic}</strong> &nbsp;·&nbsp; Transition: <strong>${selectedTrans}</strong>${text ? ` &nbsp;·&nbsp; Text: <strong>"${text}"</strong>` : ''}`;
   }
 
   function showSlide(i) {
     if (images.length === 0) return;
-    document.getElementById('previewImg').style.display = 'block';
-    document.getElementById('previewImg').src = images[i % images.length].src;
+    const idx = i % images.length;
+    const imgEl = document.getElementById('previewImg');
+    imgEl.style.display = 'block';
+    imgEl.src = images[idx].src;
     const text = document.getElementById('textInput').value;
     document.getElementById('previewOverlay').textContent = text || '';
-    currentSlide = i % images.length;
+    currentSlide = idx;
   }
 
   function togglePlay() {
     if (images.length === 0) {
-      alert('Please upload images first');
+      alert('Please upload images first.');
       return;
     }
-    if (isPlaying) { stopPlay(); return; }
+    if (isPlaying) {
+      stopPlay();
+      return;
+    }
     isPlaying = true;
     document.getElementById('playBtn').textContent = '⏸ Pause';
     document.getElementById('previewEmpty').style.display = 'none';
     document.getElementById('previewImg').style.display = 'block';
-    document.getElementById('previewImg').src = images[0].src;
     let elapsed = 0;
     const total = images.length * duration;
     showSlide(0);
     playInterval = setInterval(() => {
       elapsed += 0.1;
+      elapsed = Math.round(elapsed * 10) / 10;
       const pct = Math.min((elapsed / total) * 100, 100);
       document.getElementById('timelineFill').style.width = pct + '%';
       const mins = Math.floor(elapsed / 60);
       const secs = Math.floor(elapsed % 60);
-      document.getElementById('timeDisplay').textContent = mins + ':' + secs.toString().padStart(2,'0');
+      document.getElementById('timeDisplay').textContent = mins + ':' + secs.toString().padStart(2, '0');
       const slide = Math.floor(elapsed / duration);
-      if (slide !== currentSlide && slide < images.length) showSlide(slide);
+      if (slide < images.length && slide !== currentSlide) showSlide(slide);
       if (elapsed >= total) stopPlay();
     }, 100);
   }
 
   function stopPlay() {
     clearInterval(playInterval);
+    playInterval = null;
     isPlaying = false;
     const btn = document.getElementById('playBtn');
     if (btn) btn.textContent = '▶ Play';
@@ -1175,10 +1189,5 @@
     handleFiles(e.dataTransfer.files);
   });
 </script>
-  <footer style="text-align:center; padding:20px; font-size:12px; color:#666;">
-  <a href="terms.html" style="color:#00e5a0; text-decoration:none;">Terms of Service</a> |
-  <a href="privacy.html" style="color:#00e5a0; text-decoration:none;">Privacy Policy</a> |
-  <a href="acceptable-use.html" style="color:#00e5a0; text-decoration:none;">Acceptable Use Policy</a>
-</footer>
 </body>
 </html>
