@@ -766,6 +766,10 @@
       <p>Click to browse · JPG, PNG, WEBP · Up to 20 images</p>
     </div>
     <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+    <div class="field">
+  <label>Describe the video you want</label>
+  <input type="text" id="promptInput" placeholder="e.g. Make the face smile, camera slowly zoom in">
+</div>
     <div class="image-grid" id="imageGrid"></div>
     <div class="img-counter" id="imgCounter" style="display:none">
       <span id="imgCount">0</span> images added
