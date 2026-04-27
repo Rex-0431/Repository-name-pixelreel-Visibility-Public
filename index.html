@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PixelReel (Test Mode)</title>
+<title>PixelReel Test</title>
 
 <style>
 body {
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
   background: #0a0a0a;
   color: #fff;
   display: flex;
@@ -15,45 +15,52 @@ body {
 }
 
 .container {
-  width: 420px;
+  width: 400px;
   background: #111;
-  padding: 25px;
-  border-radius: 12px;
-  border: 1px solid #222;
+  padding: 20px;
+  border-radius: 10px;
   text-align: center;
 }
 
-h1 { margin-bottom: 20px; }
-
 input, select, button {
-  margin: 10px 0;
-  padding: 12px;
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid #222;
+  padding: 10px;
+  margin: 10px 0;
   background: #1a1a1a;
-  color: #fff;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 6px;
 }
 
 button {
   background: #00e5a0;
-  color: #000;
+  color: black;
   font-weight: bold;
   cursor: pointer;
 }
 
-button:hover { background: #00c98a; }
-
-img {
-  margin-top: 15px;
-  max-width: 100%;
-  border-radius: 10px;
+button:hover {
+  background: #00c98a;
 }
 
-.loader {
+img {
+  max-width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+}
+
+#loader {
+  display: none;
+  margin-top: 10px;
+  color: #00e5a0;
+}
+
+#downloadLink {
   display: none;
   margin-top: 15px;
   color: #00e5a0;
+  text-decoration: none;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -61,7 +68,7 @@ img {
 <body>
 
 <div class="container">
-  <h1>PixelReel 🎬 (Test)</h1>
+  <h2>PixelReel 🎬 (Test Mode)</h2>
 
   <input type="file" id="fileInput" accept="image/*">
 
@@ -84,16 +91,13 @@ img {
     <option>Calm</option>
   </select>
 
-  <button onclick="handleExport()">Generate Video</button>
+  <button onclick="generateVideo()">Generate Video</button>
 
-  <div id="loader" class="loader">Creating video... ⏳</div>
+  <div id="loader">Creating video... ⏳</div>
 
   <div id="preview"></div>
 
-  <br>
-  <a id="downloadLink" style="display:none;color:#00e5a0;" download>
-    Download Video
-  </a>
+  <a id="downloadLink" download="video.mp4">Download Video</a>
 </div>
 
 <script>
@@ -101,59 +105,53 @@ const BACKEND = 'https://pixelreel.onrender.com';
 
 let file = null;
 
-// IMAGE UPLOAD
-document.getElementById('fileInput').addEventListener('change', (e) => {
+// IMAGE PREVIEW
+document.getElementById('fileInput').addEventListener('change', function(e) {
   file = e.target.files[0];
 
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (ev) => {
+  reader.onload = function(ev) {
     document.getElementById('preview').innerHTML =
-      `<img src="${ev.target.result}">`;
+      '<img src="' + ev.target.result + '">';
   };
   reader.readAsDataURL(file);
 });
 
-// CREATE VIDEO
-async function createVideo() {
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('prompt', document.getElementById('promptInput').value);
-  formData.append('music', document.getElementById('music').value);
-  formData.append('duration', document.getElementById('duration').value);
-  formData.append('count', document.getElementById('count').value);
-
-  const res = await fetch(BACKEND + '/generate-video', {
-    method: 'POST',
-    body: formData
-  });
-
-  if (!res.ok) throw new Error();
-
-  const data = await res.json();
-  return data.url;
-}
-
-// EXPORT (NO PAYMENT)
-async function handleExport() {
+// GENERATE VIDEO (NO PAYMENT)
+async function generateVideo() {
 
   if (!file) {
-    alert("Upload image first");
+    alert("Please upload an image first");
     return;
   }
 
   document.getElementById('loader').style.display = 'block';
+  document.getElementById('downloadLink').style.display = 'none';
+
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('prompt', document.getElementById('promptInput').value);
+  formData.append('duration', document.getElementById('duration').value);
+  formData.append('count', document.getElementById('count').value);
+  formData.append('music', document.getElementById('music').value);
 
   try {
-    const url = await createVideo();
+    const res = await fetch(BACKEND + '/generate-video', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
 
     document.getElementById('loader').style.display = 'none';
 
     const link = document.getElementById('downloadLink');
-    link.href = url;
+    link.href = data.url;
     link.style.display = 'block';
-    link.innerText = "Download Video";
 
   } catch (err) {
     document.getElementById('loader').style.display = 'none';
