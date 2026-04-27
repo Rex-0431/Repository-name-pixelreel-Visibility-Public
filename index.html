@@ -1,162 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>PixelReel Test</title>
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #0a0a0a;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  padding: 40px;
-}
-
-.container {
-  width: 400px;
-  background: #111;
-  padding: 20px;
-  border-radius: 10px;
-  text-align: center;
-}
-
-input, select, button {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  background: #1a1a1a;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 6px;
-}
-
-button {
-  background: #00e5a0;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #00c98a;
-}
-
-img {
-  max-width: 100%;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-
-#loader {
-  display: none;
-  margin-top: 10px;
-  color: #00e5a0;
-}
-
-#downloadLink {
-  display: none;
-  margin-top: 15px;
-  color: #00e5a0;
-  text-decoration: none;
-  font-weight: bold;
-}
-</style>
-</head>
-
+<html>
 <body>
 
-<div class="container">
-  <h2>PixelReel 🎬 (Test Mode)</h2>
+<h2>Image → Video Generator</h2>
 
-  <input type="file" id="fileInput" accept="image/*">
+<input type="file" id="fileInput" /><br><br>
 
-  <input type="text" id="promptInput" placeholder="Describe your video">
+<input type="text" id="instructions" placeholder="Instructions (zoom, black and white, bright)" /><br><br>
 
-  <select id="duration">
-    <option value="5">5 sec</option>
-    <option value="10">10 sec</option>
-    <option value="15">15 sec</option>
-  </select>
+<input type="number" id="duration" placeholder="Duration (seconds)" /><br><br>
 
-  <select id="count">
-    <option value="1">1 Video</option>
-    <option value="3">3 Videos</option>
-  </select>
+<button onclick="upload()">Generate Video</button>
 
-  <select id="music">
-    <option>Cinematic</option>
-    <option>Upbeat</option>
-    <option>Calm</option>
-  </select>
-
-  <button onclick="generateVideo()">Generate Video</button>
-
-  <div id="loader">Creating video... ⏳</div>
-
-  <div id="preview"></div>
-
-  <a id="downloadLink" download="video.mp4">Download Video</a>
-</div>
+<div id="result"></div>
 
 <script>
-const BACKEND = 'https://pixelreel.onrender.com';
-
-let file = null;
-
-// IMAGE PREVIEW
-document.getElementById('fileInput').addEventListener('change', function(e) {
-  file = e.target.files[0];
-
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    document.getElementById('preview').innerHTML =
-      '<img src="' + ev.target.result + '">';
-  };
-  reader.readAsDataURL(file);
-});
-
-// GENERATE VIDEO (NO PAYMENT)
-async function generateVideo() {
-
-  if (!file) {
-    alert("Please upload an image first");
-    return;
-  }
-
-  document.getElementById('loader').style.display = 'block';
-  document.getElementById('downloadLink').style.display = 'none';
+async function upload() {
+  const file = document.getElementById("fileInput").files[0];
+  const instructions = document.getElementById("instructions").value;
+  const duration = document.getElementById("duration").value;
 
   const formData = new FormData();
-  formData.append('image', file);
-  formData.append('prompt', document.getElementById('promptInput').value);
-  formData.append('duration', document.getElementById('duration').value);
-  formData.append('count', document.getElementById('count').value);
-  formData.append('music', document.getElementById('music').value);
+  formData.append("image", file);
+  formData.append("instructions", instructions);
+  formData.append("duration", duration);
 
-  try {
-    const res = await fetch(BACKEND + '/generate-video', {
-      method: 'POST',
-      body: formData
-    });
+  const res = await fetch("http://localhost:5000/generate-video", {
+    method: "POST",
+    body: formData
+  });
 
-    if (!res.ok) throw new Error();
+  const blob = await res.blob();
+  const videoUrl = URL.createObjectURL(blob);
 
-    const data = await res.json();
-
-    document.getElementById('loader').style.display = 'none';
-
-    const link = document.getElementById('downloadLink');
-    link.href = data.url;
-    link.style.display = 'block';
-
-  } catch (err) {
-    document.getElementById('loader').style.display = 'none';
-    alert("Video generation failed");
-  }
+  document.getElementById("result").innerHTML =
+    `<video controls width="400" src="${videoUrl}"></video>`;
 }
 </script>
 
