@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PixelReel</title>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<title>PixelReel (Test Mode)</title>
 
 <style>
 body {
@@ -24,9 +23,7 @@ body {
   text-align: center;
 }
 
-h1 {
-  margin-bottom: 20px;
-}
+h1 { margin-bottom: 20px; }
 
 input, select, button {
   margin: 10px 0;
@@ -45,9 +42,7 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #00c98a;
-}
+button:hover { background: #00c98a; }
 
 img {
   margin-top: 15px;
@@ -55,15 +50,10 @@ img {
   border-radius: 10px;
 }
 
-.price-box {
-  margin-top: 10px;
-  color: #00e5a0;
-  font-weight: bold;
-}
-
 .loader {
   display: none;
   margin-top: 15px;
+  color: #00e5a0;
 }
 </style>
 </head>
@@ -71,19 +61,19 @@ img {
 <body>
 
 <div class="container">
-  <h1>PixelReel 🎬</h1>
+  <h1>PixelReel 🎬 (Test)</h1>
 
   <input type="file" id="fileInput" accept="image/*">
 
   <input type="text" id="promptInput" placeholder="Describe your video">
 
-  <select id="duration" onchange="updatePriceUI()">
+  <select id="duration">
     <option value="5">5 sec</option>
     <option value="10">10 sec</option>
     <option value="15">15 sec</option>
   </select>
 
-  <select id="count" onchange="updatePriceUI()">
+  <select id="count">
     <option value="1">1 Video</option>
     <option value="3">3 Videos</option>
   </select>
@@ -94,9 +84,7 @@ img {
     <option>Calm</option>
   </select>
 
-  <div class="price-box" id="priceBox">Price: ₹199</div>
-
-  <button onclick="handleExport()">Export Video</button>
+  <button onclick="handleExport()">Generate Video</button>
 
   <div id="loader" class="loader">Creating video... ⏳</div>
 
@@ -110,7 +98,6 @@ img {
 
 <script>
 const BACKEND = 'https://pixelreel.onrender.com';
-const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
 
 let file = null;
 
@@ -128,33 +115,14 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// PRICE LOGIC
-function calculatePrice(duration, count) {
-  duration = parseInt(duration);
-  count = parseInt(count);
-
-  if (duration === 5) return count === 1 ? 199 : 599;
-  if (duration === 10) return count === 1 ? 499 : 1099;
-  if (duration === 15) return count === 1 ? 999 : 1999;
-
-  return 199;
-}
-
-// UPDATE PRICE UI
-function updatePriceUI() {
-  const duration = document.getElementById('duration').value;
-  const count = document.getElementById('count').value;
-
-  const price = calculatePrice(duration, count);
-  document.getElementById('priceBox').innerText = "Price: ₹" + price;
-}
-
 // CREATE VIDEO
 async function createVideo() {
   const formData = new FormData();
   formData.append('image', file);
   formData.append('prompt', document.getElementById('promptInput').value);
   formData.append('music', document.getElementById('music').value);
+  formData.append('duration', document.getElementById('duration').value);
+  formData.append('count', document.getElementById('count').value);
 
   const res = await fetch(BACKEND + '/generate-video', {
     method: 'POST',
@@ -167,7 +135,7 @@ async function createVideo() {
   return data.url;
 }
 
-// EXPORT
+// EXPORT (NO PAYMENT)
 async function handleExport() {
 
   if (!file) {
@@ -175,54 +143,21 @@ async function handleExport() {
     return;
   }
 
-  const duration = document.getElementById('duration').value;
-  const count = document.getElementById('count').value;
-
-  const price = calculatePrice(duration, count);
+  document.getElementById('loader').style.display = 'block';
 
   try {
+    const url = await createVideo();
 
-    const orderRes = await fetch(BACKEND + '/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: price * 100 })
-    });
+    document.getElementById('loader').style.display = 'none';
 
-    const order = await orderRes.json();
+    const link = document.getElementById('downloadLink');
+    link.href = url;
+    link.style.display = 'block';
+    link.innerText = "Download Video";
 
-    const options = {
-      key: RZP_KEY,
-      amount: order.amount,
-      currency: "INR",
-      name: "PixelReel",
-      description: "Video Export",
-      order_id: order.id,
-
-      handler: async function () {
-        document.getElementById('loader').style.display = 'block';
-
-        try {
-          const url = await createVideo();
-
-          document.getElementById('loader').style.display = 'none';
-
-          const link = document.getElementById('downloadLink');
-          link.href = url;
-          link.style.display = 'block';
-          link.innerText = "Download Video";
-
-        } catch {
-          document.getElementById('loader').style.display = 'none';
-          alert("Video failed");
-        }
-      }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
-
-  } catch {
-    alert("Server error");
+  } catch (err) {
+    document.getElementById('loader').style.display = 'none';
+    alert("Video generation failed");
   }
 }
 </script>
