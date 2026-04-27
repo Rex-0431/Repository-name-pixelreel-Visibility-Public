@@ -2,166 +2,168 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PixelReel</title>
-
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
-body { background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; }
-.container { max-width:700px; margin:auto; padding:20px; }
-input, button, select {
-  width:100%; padding:12px; margin:10px 0;
-  border-radius:8px; border:none;
+body {
+  font-family: Arial;
+  background: #111;
+  color: #fff;
+  text-align: center;
+  padding: 40px;
 }
-button { background:#00e5a0; font-weight:bold; cursor:pointer; }
-img { max-width:100%; margin-top:10px; border-radius:10px; }
+input, select, button {
+  margin: 10px;
+  padding: 10px;
+  width: 250px;
+}
+button {
+  background: #00e5a0;
+  border: none;
+  font-weight: bold;
+}
+img {
+  margin-top: 20px;
+  max-width: 200px;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
 <h1>PixelReel 🎬</h1>
-<p>Turn your image into AI video</p>
 
-<!-- IMAGE -->
-<input type="file" id="imageInput" accept="image/*">
+<input type="file" id="fileInput" accept="image/*"><br>
 
-<!-- PROMPT -->
-<input type="text" id="promptInput" placeholder="Describe animation (e.g. smile, zoom in)">
+<input type="text" id="promptInput" placeholder="Describe your video"><br>
 
-<!-- MUSIC -->
+<select id="duration">
+  <option value="5">5 sec</option>
+  <option value="10">10 sec</option>
+  <option value="15">15 sec</option>
+</select><br>
+
+<select id="count">
+  <option value="1">1 Video</option>
+  <option value="3">3 Videos</option>
+</select><br>
+
 <select id="music">
   <option>Cinematic</option>
   <option>Upbeat</option>
   <option>Calm</option>
-  <option>Romantic</option>
-</select>
+</select><br>
 
-<!-- DURATION -->
-<select id="duration">
-  <option value="5">5 seconds</option>
-  <option value="10">10 seconds</option>
-  <option value="15">15 seconds</option>
-</select>
+<button onclick="handleExport()">Export Video</button>
 
-<!-- QUANTITY -->
-<select id="quantity">
-  <option value="1">1 video</option>
-  <option value="3">3 videos</option>
-</select>
+<div id="preview"></div>
 
-<h2 id="price">Price: ₹199</h2>
-
-<button onclick="startPayment()">Generate Video</button>
-
-<img id="preview" style="display:none;">
-<a id="download" style="display:none;" download="video.mp4">Download Video</a>
-
-</div>
+<br><br>
+<a id="downloadLink" style="display:none;color:#00e5a0;" download>Download Video</a>
 
 <script>
-const BACKEND = "https://pixelreel.onrender.com";
-const KEY = "rzp_test_Shn8u2MBIVd6vS";
+const BACKEND = 'https://pixelreel.onrender.com';
+const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
 
 let file = null;
 
-/* IMAGE PREVIEW */
-document.getElementById("imageInput").onchange = function(e){
+// ---------- IMAGE ----------
+document.getElementById('fileInput').addEventListener('change', (e) => {
   file = e.target.files[0];
+
+  if (!file) return;
+
   const reader = new FileReader();
-  reader.onload = function(ev){
-    document.getElementById("preview").src = ev.target.result;
-    document.getElementById("preview").style.display = "block";
+  reader.onload = (ev) => {
+    document.getElementById('preview').innerHTML =
+      `<img src="${ev.target.result}">`;
   };
   reader.readAsDataURL(file);
-};
+});
 
-/* PRICE CALCULATION */
-function calculatePrice(){
-  const duration = parseInt(document.getElementById("duration").value);
-  const qty = parseInt(document.getElementById("quantity").value);
+// ---------- PRICE ----------
+function calculatePrice(duration, count) {
+  duration = parseInt(duration);
+  count = parseInt(count);
 
-  let price = 0;
+  if (duration === 5) return count === 1 ? 199 : 599;
+  if (duration === 10) return count === 1 ? 499 : 1099;
+  if (duration === 15) return count === 1 ? 999 : 1999;
 
-  if(qty === 1){
-    if(duration === 5) price = 199;
-    if(duration === 10) price = 499;
-    if(duration === 15) price = 999;
-  }
-
-  if(qty === 3){
-    if(duration === 5) price = 599;
-    if(duration === 10) price = 1099;
-    if(duration === 15) price = 1999;
-  }
-
-  document.getElementById("price").innerText = "Price: ₹" + price;
-  return price;
+  return 199;
 }
 
-document.getElementById("duration").onchange = calculatePrice;
-document.getElementById("quantity").onchange = calculatePrice;
-
-/* CREATE VIDEO */
-async function createVideo(){
+// ---------- VIDEO ----------
+async function createVideo() {
   const formData = new FormData();
-  formData.append("image", file);
-  formData.append("prompt", document.getElementById("promptInput").value);
-  formData.append("music", document.getElementById("music").value);
-  formData.append("duration", document.getElementById("duration").value);
+  formData.append('image', file);
+  formData.append('prompt', document.getElementById('promptInput').value);
 
-  const res = await fetch(BACKEND + "/generate-video", {
-    method:"POST",
-    body:formData
+  const res = await fetch(BACKEND + '/generate-video', {
+    method: 'POST',
+    body: formData
   });
+
+  if (!res.ok) throw new Error();
 
   const data = await res.json();
   return data.url;
 }
 
-/* PAYMENT */
-async function startPayment(){
-  if(!file){
+// ---------- EXPORT ----------
+async function handleExport() {
+
+  if (!file) {
     alert("Upload image first");
     return;
   }
 
-  const price = calculatePrice();
-  const amount = price * 100;
+  const duration = document.getElementById('duration').value;
+  const count = document.getElementById('count').value;
 
-  const orderRes = await fetch(BACKEND + "/create-order", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ amount })
-  });
+  const price = calculatePrice(duration, count);
 
-  const order = await orderRes.json();
+  try {
 
-  const options = {
-    key: KEY,
-    amount: order.amount,
-    currency: "INR",
-    name: "PixelReel",
-    order_id: order.id,
+    const orderRes = await fetch(BACKEND + '/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: price * 100 })
+    });
 
-    handler: async function(){
-      const url = await createVideo();
+    const order = await orderRes.json();
 
-      document.getElementById("download").href = url;
-      document.getElementById("download").style.display = "block";
-      document.getElementById("download").innerText = "Download Video";
-    }
-  };
+    const options = {
+      key: RZP_KEY,
+      amount: order.amount,
+      currency: "INR",
+      name: "PixelReel",
+      description: "Video Export",
+      order_id: order.id,
 
-  const rzp = new Razorpay(options);
-  rzp.open();
+      handler: async function () {
+        try {
+          const url = await createVideo();
+
+          const link = document.getElementById('downloadLink');
+          link.href = url;
+          link.style.display = 'block';
+          link.innerText = "Download Video";
+
+        } catch {
+          alert("Video failed");
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch {
+    alert("Server error");
+  }
 }
-
-/* INIT */
-calculatePrice();
 </script>
 
 </body>
