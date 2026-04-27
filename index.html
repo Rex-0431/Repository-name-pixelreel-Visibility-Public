@@ -1,1126 +1,170 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PixelReel — Turn Images Into Videos</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<style>
-  :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface2: #1a1a1a;
-    --border: #222222;
-    --accent: #00e5a0;
-    --accent2: #00b87a;
-    --text: #f0f0f0;
-    --muted: #666666;
-    --danger: #ff4444;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-  }
-
-  /* NAV */
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 2rem;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: rgba(10,10,10,0.95);
-    backdrop-filter: blur(10px);
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.5px;
-    color: var(--text);
-  }
-
-  .logo span { color: var(--accent); }
-
-  .nav-badge {
-    font-size: 12px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  /* HERO */
-  .hero {
-    text-align: center;
-    padding: 5rem 2rem 3rem;
-    max-width: 700px;
-    margin: 0 auto;
-  }
-
-  .hero-tag {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(0,229,160,0.3);
-    padding: 5px 16px;
-    border-radius: 20px;
-  }
-
-  .hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -2px;
-    margin-bottom: 1.25rem;
-  }
-
-  .hero h1 em {
-    font-style: normal;
-    color: var(--accent);
-  }
-
-  .hero p {
-    font-size: 17px;
-    color: var(--muted);
-    line-height: 1.6;
-    font-weight: 300;
-    margin-bottom: 2.5rem;
-  }
-
-  /* STEPS */
-  .steps-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-    margin: 0 auto 2.5rem;
-    max-width: 600px;
-    padding: 0 2rem;
-  }
-
-  .step-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
-    cursor: pointer;
-  }
-
-  .step-circle {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    transition: all 0.2s;
-    font-family: 'Syne', sans-serif;
-    position: relative;
-    z-index: 1;
-    background: var(--bg);
-  }
-
-  .step-line {
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-    margin-top: -23px;
-  }
-
-  .step-label {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 400;
-    white-space: nowrap;
-  }
-
-  .step-item.active .step-circle {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: 0 0 12px rgba(0,229,160,0.2);
-  }
-
-  .step-item.active .step-label { color: var(--text); }
-
-  .step-item.done .step-circle {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #000;
-  }
-
-  /* MAIN CONTAINER */
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 0 1.5rem 4rem;
-  }
-
-  /* PANELS */
-  .panel { display: none; animation: fadeIn 0.3s ease; }
-  .panel.active { display: block; }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* UPLOAD ZONE */
-  .upload-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: 16px;
-    padding: 3rem 2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: var(--surface);
-    margin-bottom: 1.5rem;
-  }
-
-  .upload-zone:hover {
-    border-color: var(--accent);
-    background: rgba(0,229,160,0.03);
-  }
-
-  .upload-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    background: rgba(0,229,160,0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem;
-    font-size: 24px;
-  }
-
-  .upload-zone h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 6px;
-  }
-
-  .upload-zone p {
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  /* IMAGE GRID */
-  .image-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
-    margin-bottom: 1.5rem;
-  }
-
-  .img-card {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    group: true;
-  }
-
-  .img-card img { width: 100%; height: 100%; object-fit: cover; }
-
-  .img-card .num {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    background: rgba(0,0,0,0.7);
-    color: var(--accent);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 6px;
-    font-family: 'Syne', sans-serif;
-  }
-
-  .img-card .del {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    border: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s;
-  }
-
-  .img-card .del:hover { background: var(--danger); }
-
-  /* FORM ELEMENTS */
-  .field { margin-bottom: 1.25rem; }
-
-  .field label {
-    display: block;
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 8px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-  }
-
-  .field input[type="text"] {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    font-size: 14px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    transition: border-color 0.15s;
-    outline: none;
-  }
-
-  .field input[type="text"]:focus { border-color: var(--accent); }
-
-  /* RANGE SLIDER */
-  .range-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .range-row input[type="range"] {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    outline: none;
-  }
-
-  .range-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-  }
-
-  .range-val {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--accent);
-    min-width: 50px;
-    font-family: 'Syne', sans-serif;
-  }
-
-  /* OPTION GRIDS */
-  .option-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 8px;
-  }
-
-  .opt-card {
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: all 0.15s;
-    background: var(--surface);
-  }
-
-  .opt-card:hover { border-color: var(--accent); }
-
-  .opt-card.selected {
-    border-color: var(--accent);
-    background: rgba(0,229,160,0.06);
-  }
-
-  .opt-name {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-  }
-
-  .opt-desc {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 3px;
-  }
-
-  .opt-card.selected .opt-name { color: var(--accent); }
-
-  /* PREVIEW */
-  .preview-screen {
-    border-radius: 14px;
-    overflow: hidden;
-    background: #000;
-    aspect-ratio: 16/9;
-    position: relative;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border);
-  }
-
-  .preview-screen img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .preview-overlay-text {
-    position: absolute;
-    bottom: 24px;
-    left: 0; right: 0;
-    text-align: center;
-    color: #fff;
-    font-size: 20px;
-    font-weight: 600;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-    font-family: 'Syne', sans-serif;
-    padding: 0 20px;
-  }
-
-  .preview-empty {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    font-size: 14px;
-    gap: 8px;
-  }
-
-  .preview-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 1.25rem;
-  }
-
-  .play-btn {
-    padding: 8px 20px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 13px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-  }
-
-  .play-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .timeline-bar {
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .timeline-fill {
-    height: 100%;
-    width: 0%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.1s linear;
-  }
-
-  .time-display {
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'Syne', sans-serif;
-    min-width: 40px;
-    text-align: right;
-  }
-
-  .summary-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 1.25rem;
-  }
-
-  .summary-box strong { color: var(--text); }
-
-  /* PRICING */
-  .pricing-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-  }
-
-  .price-card {
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    padding: 1.25rem;
-    background: var(--surface);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .price-card:hover { border-color: var(--accent); }
-
-  .price-card.selected {
-    border-color: var(--accent);
-    background: rgba(0,229,160,0.05);
-  }
-
-  .price-tag {
-    display: inline-block;
-    font-size: 11px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    background: rgba(0,229,160,0.15);
-    color: var(--accent);
-    margin-bottom: 10px;
-    font-weight: 500;
-  }
-
-  .price-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .price-amount {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--accent);
-    margin-bottom: 2px;
-  }
-
-  .price-period { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
-
-  .price-features { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-
-  .price-features li {
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    gap: 6px;
-    align-items: flex-start;
-  }
-
-  .price-features li::before {
-    content: '→';
-    color: var(--accent);
-    flex-shrink: 0;
-    font-size: 11px;
-    margin-top: 1px;
-  }
-
-  /* BUTTONS */
-  .btn-primary {
-    width: 100%;
-    padding: 14px;
-    border-radius: 10px;
-    border: none;
-    background: var(--accent);
-    color: #000;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: 'Syne', sans-serif;
-    cursor: pointer;
-    transition: all 0.15s;
-    letter-spacing: 0.3px;
-  }
-
-  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  .nav-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 1.5rem;
-  }
-
-  .btn-back {
-    flex: 1;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-size: 14px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-  }
-
-  .btn-back:hover { border-color: var(--text); color: var(--text); }
-
-  .btn-next {
-    flex: 2;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    background: var(--surface2);
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-    border: 1px solid var(--border);
-  }
-
-  .btn-next:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  /* STATUS */
-  .status-box {
-    padding: 14px 16px;
-    border-radius: 10px;
-    font-size: 13px;
-    margin-bottom: 1rem;
-    display: none;
-  }
-
-  .status-box.info { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); color: var(--accent); }
-  .status-box.error { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.2); color: var(--danger); }
-  .status-box.show { display: block; }
-
-  /* COUNTER */
-  .img-counter {
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .img-counter span { color: var(--accent); font-weight: 600; }
-
-  /* SECTION LABEL */
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
-    margin-top: 1.5rem;
-  }
-
-  /* PROCESSING OVERLAY */
-  .processing {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 999;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .processing.show { display: flex; }
-
-  .spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .processing p {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    color: var(--text);
-  }
-
-  .processing small { font-size: 13px; color: var(--muted); }
-
-  /* DOWNLOAD */
-  .download-box {
-    border: 1px solid var(--accent);
-    border-radius: 14px;
-    padding: 1.5rem;
-    text-align: center;
-    background: rgba(0,229,160,0.05);
-    margin-bottom: 1rem;
-  }
-
-  .download-box h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 6px;
-    color: var(--accent);
-  }
-
-  .download-box p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
-
-  .btn-download {
-    display: inline-block;
-    padding: 12px 28px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: #000;
-    font-weight: 700;
-    font-family: 'Syne', sans-serif;
-    text-decoration: none;
-    font-size: 14px;
-    transition: all 0.15s;
-  }
-
-  .btn-download:hover { background: var(--accent2); }
-
-  @media (max-width: 500px) {
-    .pricing-grid { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 2.2rem; }
-  }
-</style>
-</head>
-<body>
-
-<nav>
-  <div class="logo">Pixel<span>Reel</span></div>
-  <div class="nav-badge">Beta</div>
-</nav>
-
-<div class="hero">
-  <div class="hero-tag">Images → Video in minutes</div>
-  <h1>Create stunning<br>videos from <em>images</em></h1>
-  <p>Upload your photos, add text and music,<br>export a beautiful video instantly.</p>
-</div>
-
-<div class="steps-bar">
-  <div class="step-item active" id="si1">
-    <div class="step-circle">1</div>
-    <div class="step-label">Images</div>
-  </div>
-  <div class="step-line"></div>
-  <div class="step-item" id="si2">
-    <div class="step-circle">2</div>
-    <div class="step-label">Text</div>
-  </div>
-  <div class="step-line"></div>
-  <div class="step-item" id="si3">
-    <div class="step-circle">3</div>
-    <div class="step-label">Music</div>
-  </div>
-  <div class="step-line"></div>
-  <div class="step-item" id="si4">
-    <div class="step-circle">4</div>
-    <div class="step-label">Preview</div>
-  </div>
-  <div class="step-line"></div>
-  <div class="step-item" id="si5">
-    <div class="step-circle">5</div>
-    <div class="step-label">Export</div>
-  </div>
-</div>
-
-<div class="container">
-
-  <!-- STEP 1: IMAGES -->
-  <div class="panel active" id="p1">
-    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="dropZone">
-      <div class="upload-icon">🖼</div>
-      <h3>Upload your images</h3>
-      <p>Click to browse · JPG, PNG, WEBP · Only 1 image allowed</p>
-    </div>
-    <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
-    <div class="field">
-  <label>Describe the video you want</label>
-  <input type="text" id="promptInput" placeholder="e.g. Make the face smile, camera slowly zoom in">
-</div>
-    <div class="image-grid" id="imageGrid"></div>
-    <div class="img-counter" id="imgCounter" style="display:none">
-      <span id="imgCount">0</span> images added
-    </div>
-    <div class="nav-row">
-      <button class="btn-next" id="nextBtn1" onclick="goStep(2)" disabled style="flex:1">
-        Next: Add Text →
-      </button>
-    </div>
-  </div>
-
-  <!-- STEP 2: TEXT -->
-  <div class="panel" id="p2">
-    <div class="field">
-      <label>Text overlay (shown on your video)</label>
-      <input type="text" id="textInput" placeholder="e.g. Our Wedding Day, Summer 2025...">
-    </div>
-
-    <div class="section-label">Slide duration</div>
-    <div class="field">
-      <div class="range-row">
-        <input type="range" min="1" max="10" value="3" step="1" id="durationSlider" oninput="updateDuration(this.value)">
-        <div class="range-val" id="durationVal">3s</div>
-      </div>
-    </div>
-
-    <div class="section-label">Transition effect</div>
-    <div class="option-grid">
-      <div class="opt-card selected" onclick="selectOpt(this,'trans','Fade')">
-        <div class="opt-name">Fade</div>
-        <div class="opt-desc">Smooth crossfade</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'trans','Slide')">
-        <div class="opt-name">Slide</div>
-        <div class="opt-desc">Pan across</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'trans','Zoom')">
-        <div class="opt-name">Zoom</div>
-        <div class="opt-desc">Ken Burns effect</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'trans','None')">
-        <div class="opt-name">None</div>
-        <div class="opt-desc">Hard cut</div>
-      </div>
-    </div>
-
-    <div class="nav-row">
-      <button class="btn-back" onclick="goStep(1)">← Back</button>
-      <button class="btn-next" onclick="goStep(3)">Next: Music →</button>
-    </div>
-  </div>
-
-  <!-- STEP 3: MUSIC -->
-  <div class="panel" id="p3">
-    <div class="section-label">Choose music style</div>
-    <div class="option-grid">
-      <div class="opt-card selected" onclick="selectOpt(this,'music','Cinematic')">
-        <div class="opt-name">Cinematic</div>
-        <div class="opt-desc">Epic & emotional</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'music','Upbeat')">
-        <div class="opt-name">Upbeat</div>
-        <div class="opt-desc">Energetic & fun</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'music','Calm')">
-        <div class="opt-name">Calm</div>
-        <div class="opt-desc">Soft & peaceful</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'music','Corporate')">
-        <div class="opt-name">Corporate</div>
-        <div class="opt-desc">Clean & steady</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'music','Romantic')">
-        <div class="opt-name">Romantic</div>
-        <div class="opt-desc">Warm & dreamy</div>
-      </div>
-      <div class="opt-card" onclick="selectOpt(this,'music','No Music')">
-        <div class="opt-name">No Music</div>
-        <div class="opt-desc">Silent video</div>
-      </div>
-    </div>
-
-    <div class="nav-row">
-      <button class="btn-back" onclick="goStep(2)">← Back</button>
-      <button class="btn-next" onclick="goStep(4)">Preview →</button>
-    </div>
-  </div>
-
-  <!-- STEP 4: PREVIEW -->
-  <div class="panel" id="p4">
-    <div class="preview-screen" id="previewScreen">
-      <img id="previewImg" style="display:none">
-      <div class="preview-overlay-text" id="previewOverlay"></div>
-      <div class="preview-empty" id="previewEmpty">
-        <div style="font-size:32px">🎬</div>
-        <div>No images uploaded</div>
-      </div>
-    </div>
-
-    <div class="preview-controls">
-      <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
-      <div class="timeline-bar"><div class="timeline-fill" id="timelineFill"></div></div>
-      <div class="time-display" id="timeDisplay">0:00</div>
-    </div>
-
-    <div class="summary-box" id="summaryBox"></div>
-
-    <div class="nav-row">
-      <button class="btn-back" onclick="goStep(3)">← Back</button>
-      <button class="btn-next" onclick="goStep(5)">Export Video →</button>
-    </div>
-  </div>
-
-  <!-- STEP 5: EXPORT -->
-  <div class="panel" id="p5">
-    <div class="pricing-grid">
-      <div class="price-card selected" id="plan-single" onclick="selectPlan('single')">
-        <div class="price-name">Single Video</div>
-        <div class="price-amount">₹29</div>
-        <div class="price-period">one-time export</div>
-        <ul class="price-features">
-          <li>HD 1080p export</li>
-          <li>Watermark-free</li>
-          <li>Up to 10 images</li>
-          <li>All music styles</li>
-        </ul>
-      </div>
-      <div class="price-card" id="plan-monthly" onclick="selectPlan('monthly')">
-        <div class="price-tag">Most Popular</div>
-        <div class="price-name">Monthly</div>
-        <div class="price-amount">₹149</div>
-        <div class="price-period">per month</div>
-        <ul class="price-features">
-          <li>Unlimited exports</li>
-          <li>4K resolution</li>
-          <li>Up to 20 images</li>
-          <li>Priority processing</li>
-          <li>Custom watermark</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="status-box" id="statusBox"></div>
-    <div class="download-box" id="downloadBox" style="display:none">
-      <h3>✓ Video Ready!</h3>
-      <p>Your video has been created successfully.</p>
-      <a href="#" id="downloadLink" class="btn-download" download="pixelreel-video.mp4">
-        Download Video
-      </a>
-    </div>
-
-    <button class="btn-primary" id="exportBtn" onclick="handleExport()">
-      Export Video — ₹29
-    </button>
-
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">
-      Secured by Razorpay · Instant download after payment
-    </div>
-
-    <div class="nav-row">
-      <button class="btn-back" onclick="goStep(4)">← Back to Preview</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- PROCESSING OVERLAY -->
-<div class="processing" id="processingOverlay">
-  <div class="spinner"></div>
-  <p>Creating your video...</p>
-  <small>This takes 30–60 seconds</small>
-</div>
-
 <script>
-  const BACKEND = 'https://pixelreel.onrender.com';
-  const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
+const BACKEND = 'https://pixelreel.onrender.com';
+const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
 
-  let images = [];
-  let uploadedFiles = [];
-  let selectedMusic = 'Cinematic';
-  let selectedTrans = 'Fade';
-  let selectedPlan = 'single';
-  let duration = 3;
-  let currentStep = 1;
-  let playInterval = null;
-  let isPlaying = false;
-  let currentSlide = 0;
-  let videoUrl = null;
+let images = [];
+let selectedMusic = 'Cinematic';
+let selectedTrans = 'Fade';
+let selectedPlan = 'single';
+let duration = 3;
+let currentStep = 1;
+let playInterval = null;
+let isPlaying = false;
+let currentSlide = 0;
+let videoUrl = null;
 
-  function goStep(n) {
-    if (n === 4) buildPreview();
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.step-item').forEach((s, i) => {
-      s.classList.remove('active', 'done');
-      if (i + 1 < n) s.classList.add('done');
-      if (i + 1 === n) s.classList.add('active');
-    });
-    document.getElementById('p' + n).classList.add('active');
-    currentStep = n;
-    stopPlay();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+function goStep(n) {
+  if (n === 4) buildPreview();
 
-  function handleFiles(files) {
-    Array.from(files).forEach(file => {
-      if (images.length >= 1) {
-  showStatus('Only one image allowed.', 'error');
-  return;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.step-item').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 < n) s.classList.add('done');
+    if (i + 1 === n) s.classList.add('active');
+  });
+
+  document.getElementById('p' + n).classList.add('active');
+  currentStep = n;
+  stopPlay();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-      const reader = new FileReader();
-      reader.onload = e => {
-        images.push({ src: e.target.result, file });
-        renderGrid();
-      };
-      reader.readAsDataURL(file);
-    });
-  }
 
-  function renderGrid() {
-    const grid = document.getElementById('imageGrid');
-    const counter = document.getElementById('imgCounter');
-    const countEl = document.getElementById('imgCount');
-    grid.innerHTML = images.map((img, i) => `
-      <div class="img-card">
-        <img src="${img.src}" alt="">
-        <div class="num">${i + 1}</div>
-        <button class="del" onclick="removeImg(${i})">×</button>
-      </div>
-    `).join('');
-    if (images.length > 0) {
-      counter.style.display = 'flex';
-      countEl.textContent = images.length;
-    } else {
-      counter.style.display = 'none';
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (images.length >= 1) {
+      showStatus('Only one image allowed.', 'error');
+      return;
     }
-    document.getElementById('nextBtn1').disabled = images.length === 0;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      images.push({ src: e.target.result, file });
+      renderGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById('imageGrid');
+  const counter = document.getElementById('imgCounter');
+  const countEl = document.getElementById('imgCount');
+
+  grid.innerHTML = images.map((img, i) => `
+    <div class="img-card">
+      <img src="${img.src}">
+      <div class="num">${i + 1}</div>
+      <button class="del" onclick="removeImg(${i})">×</button>
+    </div>
+  `).join('');
+
+  if (images.length > 0) {
+    counter.style.display = 'flex';
+    countEl.textContent = images.length;
+  } else {
+    counter.style.display = 'none';
   }
 
-  function removeImg(i) {
-    images.splice(i, 1);
-    renderGrid();
+  document.getElementById('nextBtn1').disabled = images.length === 0;
+}
+
+function removeImg(i) {
+  images.splice(i, 1);
+  renderGrid();
+}
+
+function updateDuration(v) {
+  duration = parseInt(v);
+  document.getElementById('durationVal').textContent = v + 's';
+}
+
+function selectOpt(el, group, val) {
+  el.closest('.option-grid').querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+
+  if (group === 'music') selectedMusic = val;
+  if (group === 'trans') selectedTrans = val;
+}
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+
+  document.getElementById('plan-single').classList.toggle('selected', plan === 'single');
+  document.getElementById('plan-monthly').classList.toggle('selected', plan === 'monthly');
+
+  document.getElementById('exportBtn').textContent =
+    plan === 'single' ? 'Export Video — ₹29' : 'Subscribe — ₹149/month';
+}
+
+function buildPreview() {
+  stopPlay();
+
+  document.getElementById('timelineFill').style.width = '0%';
+  document.getElementById('timeDisplay').textContent = '0:00';
+
+  if (images.length === 0) {
+    document.getElementById('previewEmpty').style.display = 'flex';
+    document.getElementById('previewImg').style.display = 'none';
+    return;
   }
 
-  function updateDuration(v) {
-    duration = parseInt(v);
-    document.getElementById('durationVal').textContent = v + 's';
+  document.getElementById('previewEmpty').style.display = 'none';
+  document.getElementById('previewImg').style.display = 'block';
+  document.getElementById('previewImg').src = images[0].src;
+
+  const text = document.getElementById('textInput').value;
+  document.getElementById('previewOverlay').textContent = text || '';
+}
+
+function showSlide(i) {
+  const idx = i % images.length;
+  document.getElementById('previewImg').src = images[idx].src;
+  currentSlide = idx;
+}
+
+function togglePlay() {
+  if (images.length === 0) {
+    alert('Upload image first');
+    return;
   }
 
-  function selectOpt(el, group, val) {
-    el.closest('.option-grid').querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    if (group === 'music') selectedMusic = val;
-    if (group === 'trans') selectedTrans = val;
-  }
-
-  function selectPlan(plan) {
-    selectedPlan = plan;
-    document.getElementById('plan-single').classList.toggle('selected', plan === 'single');
-    document.getElementById('plan-monthly').classList.toggle('selected', plan === 'monthly');
-    const btn = document.getElementById('exportBtn');
-    btn.textContent = plan === 'single' ? 'Export Video — ₹29' : 'Subscribe — ₹149/month';
-  }
-
-  function buildPreview() {
+  if (isPlaying) {
     stopPlay();
-    document.getElementById('timelineFill').style.width = '0%';
-    document.getElementById('timeDisplay').textContent = '0:00';
-    if (images.length === 0) {
-      document.getElementById('previewEmpty').style.display = 'flex';
-      document.getElementById('previewImg').style.display = 'none';
-      document.getElementById('previewOverlay').textContent = '';
-      document.getElementById('summaryBox').innerHTML = 'No images uploaded yet.';
-      return;
-    }
-    document.getElementById('previewEmpty').style.display = 'none';
-    document.getElementById('previewImg').style.display = 'block';
-    document.getElementById('previewImg').src = images[0].src;
-    currentSlide = 0;
-    const text = document.getElementById('textInput').value;
-    document.getElementById('previewOverlay').textContent = text || '';
-    const total = images.length * duration;
-    const mins = Math.floor(total / 60);
-    const secs = total % 60;
-    document.getElementById('summaryBox').innerHTML =
-      `<strong>${images.length}</strong> slides &nbsp;·&nbsp; <strong>${duration}s</strong> each &nbsp;·&nbsp; Total <strong>${mins}:${secs.toString().padStart(2,'0')}</strong> &nbsp;·&nbsp; Music: <strong>${selectedMusic}</strong> &nbsp;·&nbsp; Transition: <strong>${selectedTrans}</strong>${text ? ` &nbsp;·&nbsp; Text: <strong>"${text}"</strong>` : ''}`;
+    return;
   }
 
-  function showSlide(i) {
-    if (images.length === 0) return;
-    const idx = i % images.length;
-    const imgEl = document.getElementById('previewImg');
-    imgEl.style.display = 'block';
-    imgEl.src = images[idx].src;
-    const text = document.getElementById('textInput').value;
-    document.getElementById('previewOverlay').textContent = text || '';
-    currentSlide = idx;
-  }
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸ Pause';
 
-  function togglePlay() {
-    if (images.length === 0) {
-      alert('Please upload images first.');
-      return;
-    }
-    if (isPlaying) {
-      stopPlay();
-      return;
-    }
-    isPlaying = true;
-    document.getElementById('playBtn').textContent = '⏸ Pause';
-    document.getElementById('previewEmpty').style.display = 'none';
-    document.getElementById('previewImg').style.display = 'block';
-    let elapsed = 0;
-    const total = images.length * duration;
-    showSlide(0);
-    playInterval = setInterval(() => {
-      elapsed += 0.1;
-      elapsed = Math.round(elapsed * 10) / 10;
-      const pct = Math.min((elapsed / total) * 100, 100);
-      document.getElementById('timelineFill').style.width = pct + '%';
-      const mins = Math.floor(elapsed / 60);
-      const secs = Math.floor(elapsed % 60);
-      document.getElementById('timeDisplay').textContent = mins + ':' + secs.toString().padStart(2, '0');
-      const slide = Math.floor(elapsed / duration);
-      if (slide < images.length && slide !== currentSlide) showSlide(slide);
-      if (elapsed >= total) stopPlay();
-    }, 100);
-  }
+  let elapsed = 0;
+  const total = images.length * duration;
 
-  function stopPlay() {
-    clearInterval(playInterval);
-    playInterval = null;
-    isPlaying = false;
-    const btn = document.getElementById('playBtn');
-    if (btn) btn.textContent = '▶ Play';
-  }
+  playInterval = setInterval(() => {
+    elapsed += 0.1;
 
-  function showStatus(msg, type) {
-    const box = document.getElementById('statusBox');
-    box.textContent = msg;
-    box.className = 'status-box ' + type + ' show';
-  }
+    const pct = Math.min((elapsed / total) * 100, 100);
+    document.getElementById('timelineFill').style.width = pct + '%';
 
-  async function uploadImages() {
-    const formData = new FormData();
-    images.forEach(img => formData.append('images', img.file));
-    const res = await fetch(BACKEND + '/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    return data.files;
-  }
+    const slide = Math.floor(elapsed / duration);
+    if (slide !== currentSlide) showSlide(slide);
 
-  async function createVideo(file) {
+    if (elapsed >= total) stopPlay();
+  }, 100);
+}
+
+function stopPlay() {
+  clearInterval(playInterval);
+  isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶ Play';
+}
+
+function showStatus(msg, type) {
+  const box = document.getElementById('statusBox');
+  box.textContent = msg;
+  box.className = 'status-box ' + type + ' show';
+}
+
+async function createVideo(file) {
   const formData = new FormData();
 
   formData.append('image', file);
@@ -1138,88 +182,78 @@
   const data = await res.json();
   return data.url;
 }
-  const formData = new FormData();
 
-  formData.append('image', file);
-  formData.append('prompt', document.getElementById('promptInput').value);
+async function handleExport() {
+  if (images.length === 0) {
+    showStatus('Please upload an image first.', 'error');
+    return;
+  }
 
-  const res = await fetch(BACKEND + '/generate-video', {
-    method: 'POST',
-    body: formData
-  });
+  const amount = selectedPlan === 'single' ? 2900 : 14900;
 
-  const data = await res.json();
-  return data.url;
-}
-    const text = document.getElementById('textInput').value;
-    const res = await fetch(BACKEND + '/create-video', {
+  try {
+    const orderRes = await fetch(BACKEND + '/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files, duration, text, music: selectedMusic, transition: selectedTrans })
+      body: JSON.stringify({ amount })
     });
-    const data = await res.json();
-    return data.url;
+
+    const order = await orderRes.json();
+
+    const options = {
+      key: RZP_KEY,
+      amount: order.amount,
+      currency: 'INR',
+      name: 'PixelReel',
+      description: 'Video Export',
+      order_id: order.id,
+
+      handler: async function () {
+        document.getElementById('processingOverlay').classList.add('show');
+        document.getElementById('exportBtn').disabled = true;
+
+        try {
+          const url = await createVideo(images[0].file);
+
+          document.getElementById('processingOverlay').classList.remove('show');
+          document.getElementById('downloadBox').style.display = 'block';
+          document.getElementById('downloadLink').href = url;
+
+          showStatus('Video ready!', 'info');
+
+        } catch (err) {
+          document.getElementById('processingOverlay').classList.remove('show');
+          showStatus('Video failed.', 'error');
+          document.getElementById('exportBtn').disabled = false;
+        }
+      },
+
+      theme: { color: '#00e5a0' }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    showStatus('Server error. Try again.', 'error');
   }
+}
 
-  
+/* drag drop */
+const dropZone = document.getElementById('dropZone');
 
-    const amount = selectedPlan === 'single' ? 2900 : 14900;
-    const label = selectedPlan === 'single' ? '₹29' : '₹149/month';
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--accent)';
+});
 
-    try {
-      const orderRes = await fetch(BACKEND + '/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount })
-      });
-      const order = await orderRes.json();
+dropZone.addEventListener('dragleave', () => {
+  dropZone.style.borderColor = 'var(--border)';
+});
 
-      const options = {
-        key: RZP_KEY,
-        amount: order.amount,
-        currency: 'INR',
-        name: 'PixelReel',
-        description: selectedPlan === 'single' ? 'Single Video Export' : 'Monthly Subscription',
-        order_id: order.id,
-        handler: async function(response) {
-          document.getElementById('processingOverlay').classList.add('show');
-          document.getElementById('exportBtn').disabled = true;
-          try {
-            const url = await createVideo(images[0].file););
-            videoUrl = url;
-            document.getElementById('processingOverlay').classList.remove('show');
-            document.getElementById('downloadBox').style.display = 'block';
-            document.getElementById('downloadLink').href = url;
-            showStatus('Payment successful! Your video is ready.', 'info');
-          } catch (err) {
-            document.getElementById('processingOverlay').classList.remove('show');
-            showStatus('Video creation failed. Please try again.', 'error');
-            document.getElementById('exportBtn').disabled = false;
-          }
-        },
-        prefill: { name: '', email: '', contact: '' },
-        theme: { color: '#00e5a0' }
-      };
-
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function(response) {
-        showStatus('Payment failed. Please try again.', 'error');
-      });
-      rzp.open();
-
-    } catch (err) {
-      showStatus('Could not connect to server. Please try again.', 'error');
-    }
-  }
-
-  const dropZone = document.getElementById('dropZone');
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
-  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--border)'; });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.style.borderColor = 'var(--border)';
-    handleFiles(e.dataTransfer.files);
-  });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.style.borderColor = 'var(--border)';
+  handleFiles(e.dataTransfer.files);
+});
 </script>
-</body>
-</html>
