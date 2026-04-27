@@ -3,39 +3,51 @@
 <html>
 <body>
 
-<h2>Image → Video Generator</h2>
+<h2>AI Video Generator</h2>
 
-<input type="file" id="fileInput" /><br><br>
+<input type="file" id="file"><br><br>
 
-<input type="text" id="instructions" placeholder="Instructions (zoom, black and white, bright)" /><br><br>
+<input type="text" id="prompt" placeholder="Describe the video"><br><br>
 
-<input type="number" id="duration" placeholder="Duration (seconds)" /><br><br>
+<input type="number" id="duration" placeholder="Duration (seconds)"><br><br>
 
-<button onclick="upload()">Generate Video</button>
+<button onclick="generate()">Generate Video</button>
 
+<div id="status"></div>
 <div id="result"></div>
 
 <script>
-async function upload() {
-  const file = document.getElementById("fileInput").files[0];
-  const instructions = document.getElementById("instructions").value;
+async function generate() {
+  const file = document.getElementById("file").files[0];
+  const prompt = document.getElementById("prompt").value;
   const duration = document.getElementById("duration").value;
+
+  if (!file) {
+    alert("Upload image");
+    return;
+  }
 
   const formData = new FormData();
   formData.append("image", file);
-  formData.append("instructions", instructions);
+  formData.append("instructions", prompt);
   formData.append("duration", duration);
+
+  document.getElementById("status").innerText = "Generating video... please wait";
 
   const res = await fetch("http://localhost:5000/generate-video", {
     method: "POST",
     body: formData
   });
 
-  const blob = await res.blob();
-  const videoUrl = URL.createObjectURL(blob);
+  const data = await res.json();
 
-  document.getElementById("result").innerHTML =
-    `<video controls width="400" src="${videoUrl}"></video>`;
+  if (data.video) {
+    document.getElementById("status").innerText = "Done";
+    document.getElementById("result").innerHTML =
+      `<video controls width="400" src="${data.video}"></video>`;
+  } else {
+    document.getElementById("status").innerText = "Failed";
+  }
 }
 </script>
 
