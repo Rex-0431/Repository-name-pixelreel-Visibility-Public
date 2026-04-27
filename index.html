@@ -7,60 +7,106 @@
 
 <style>
 body {
-  font-family: Arial;
-  background: #111;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a0a;
   color: #fff;
-  text-align: center;
+  display: flex;
+  justify-content: center;
   padding: 40px;
 }
-input, select, button {
-  margin: 10px;
-  padding: 10px;
-  width: 250px;
+
+.container {
+  width: 420px;
+  background: #111;
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid #222;
+  text-align: center;
 }
+
+h1 {
+  margin-bottom: 20px;
+}
+
+input, select, button {
+  margin: 10px 0;
+  padding: 12px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #222;
+  background: #1a1a1a;
+  color: #fff;
+}
+
 button {
   background: #00e5a0;
-  border: none;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #00c98a;
+}
+
+img {
+  margin-top: 15px;
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.price-box {
+  margin-top: 10px;
+  color: #00e5a0;
   font-weight: bold;
 }
-img {
-  margin-top: 20px;
-  max-width: 200px;
+
+.loader {
+  display: none;
+  margin-top: 15px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>PixelReel 🎬</h1>
+<div class="container">
+  <h1>PixelReel 🎬</h1>
 
-<input type="file" id="fileInput" accept="image/*"><br>
+  <input type="file" id="fileInput" accept="image/*">
 
-<input type="text" id="promptInput" placeholder="Describe your video"><br>
+  <input type="text" id="promptInput" placeholder="Describe your video">
 
-<select id="duration">
-  <option value="5">5 sec</option>
-  <option value="10">10 sec</option>
-  <option value="15">15 sec</option>
-</select><br>
+  <select id="duration" onchange="updatePriceUI()">
+    <option value="5">5 sec</option>
+    <option value="10">10 sec</option>
+    <option value="15">15 sec</option>
+  </select>
 
-<select id="count">
-  <option value="1">1 Video</option>
-  <option value="3">3 Videos</option>
-</select><br>
+  <select id="count" onchange="updatePriceUI()">
+    <option value="1">1 Video</option>
+    <option value="3">3 Videos</option>
+  </select>
 
-<select id="music">
-  <option>Cinematic</option>
-  <option>Upbeat</option>
-  <option>Calm</option>
-</select><br>
+  <select id="music">
+    <option>Cinematic</option>
+    <option>Upbeat</option>
+    <option>Calm</option>
+  </select>
 
-<button onclick="handleExport()">Export Video</button>
+  <div class="price-box" id="priceBox">Price: ₹199</div>
 
-<div id="preview"></div>
+  <button onclick="handleExport()">Export Video</button>
 
-<br><br>
-<a id="downloadLink" style="display:none;color:#00e5a0;" download>Download Video</a>
+  <div id="loader" class="loader">Creating video... ⏳</div>
+
+  <div id="preview"></div>
+
+  <br>
+  <a id="downloadLink" style="display:none;color:#00e5a0;" download>
+    Download Video
+  </a>
+</div>
 
 <script>
 const BACKEND = 'https://pixelreel.onrender.com';
@@ -68,7 +114,7 @@ const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
 
 let file = null;
 
-// ---------- IMAGE ----------
+// IMAGE UPLOAD
 document.getElementById('fileInput').addEventListener('change', (e) => {
   file = e.target.files[0];
 
@@ -82,7 +128,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// ---------- PRICE ----------
+// PRICE LOGIC
 function calculatePrice(duration, count) {
   duration = parseInt(duration);
   count = parseInt(count);
@@ -94,11 +140,21 @@ function calculatePrice(duration, count) {
   return 199;
 }
 
-// ---------- VIDEO ----------
+// UPDATE PRICE UI
+function updatePriceUI() {
+  const duration = document.getElementById('duration').value;
+  const count = document.getElementById('count').value;
+
+  const price = calculatePrice(duration, count);
+  document.getElementById('priceBox').innerText = "Price: ₹" + price;
+}
+
+// CREATE VIDEO
 async function createVideo() {
   const formData = new FormData();
   formData.append('image', file);
   formData.append('prompt', document.getElementById('promptInput').value);
+  formData.append('music', document.getElementById('music').value);
 
   const res = await fetch(BACKEND + '/generate-video', {
     method: 'POST',
@@ -111,7 +167,7 @@ async function createVideo() {
   return data.url;
 }
 
-// ---------- EXPORT ----------
+// EXPORT
 async function handleExport() {
 
   if (!file) {
@@ -143,8 +199,12 @@ async function handleExport() {
       order_id: order.id,
 
       handler: async function () {
+        document.getElementById('loader').style.display = 'block';
+
         try {
           const url = await createVideo();
+
+          document.getElementById('loader').style.display = 'none';
 
           const link = document.getElementById('downloadLink');
           link.href = url;
@@ -152,6 +212,7 @@ async function handleExport() {
           link.innerText = "Download Video";
 
         } catch {
+          document.getElementById('loader').style.display = 'none';
           alert("Video failed");
         }
       }
