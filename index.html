@@ -1120,8 +1120,24 @@
     return data.files;
   }
 
-  async function createVideo(files) {
-    async function createVideo(file) {
+  async function createVideo(file) {
+  const formData = new FormData();
+
+  formData.append('image', file);
+  formData.append('prompt', document.getElementById('promptInput').value);
+
+  const res = await fetch(BACKEND + '/generate-video', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    throw new Error('Video generation failed');
+  }
+
+  const data = await res.json();
+  return data.url;
+}
   const formData = new FormData();
 
   formData.append('image', file);
@@ -1145,11 +1161,7 @@
     return data.url;
   }
 
-  async function handleExport() {
-    if (images.length === 0) {
-      showStatus('Please upload at least one image first.', 'error');
-      return;
-    }
+  
 
     const amount = selectedPlan === 'single' ? 2900 : 14900;
     const label = selectedPlan === 'single' ? '₹29' : '₹149/month';
