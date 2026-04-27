@@ -1,260 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PixelReel</title>
+
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-window.onload = function() {
-const BACKEND = 'https://pixelreel.onrender.com';
-const RZP_KEY = 'rzp_test_Shn8u2MBIVd6vS';
 
-let images = [];
-let selectedMusic = 'Cinematic';
-let selectedTrans = 'Fade';
-let selectedPlan = 'single';
-let duration = 3;
-let currentStep = 1;
-let playInterval = null;
-let isPlaying = false;
-let currentSlide = 0;
-let videoUrl = null;
-
-function goStep(n) {
-  if (n === 4) buildPreview();
-
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.step-item').forEach((s, i) => {
-    s.classList.remove('active', 'done');
-    if (i + 1 < n) s.classList.add('done');
-    if (i + 1 === n) s.classList.add('active');
-  });
-
-  document.getElementById('p' + n).classList.add('active');
-  currentStep = n;
-  stopPlay();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+<style>
+body { background:#0a0a0a; color:#fff; font-family:sans-serif; text-align:center; }
+.container { max-width:700px; margin:auto; padding:20px; }
+input, button, select {
+  width:100%; padding:12px; margin:10px 0;
+  border-radius:8px; border:none;
 }
+button { background:#00e5a0; font-weight:bold; cursor:pointer; }
+img { max-width:100%; margin-top:10px; border-radius:10px; }
+</style>
+</head>
 
-function handleFiles(files) {
-  Array.from(files).forEach(file => {
-    if (images.length >= 1) {
-      showStatus('Only one image allowed.', 'error');
-      return;
-    }
+<body>
 
-    const reader = new FileReader();
-    reader.onload = e => {
-      images.push({ src: e.target.result, file });
-      renderGrid();
-    };
-    reader.readAsDataURL(file);
-  });
-}
+<div class="container">
 
-function renderGrid() {
-  const grid = document.getElementById('imageGrid');
-  const counter = document.getElementById('imgCounter');
-  const countEl = document.getElementById('imgCount');
+<h1>PixelReel 🎬</h1>
+<p>Turn your image into AI video</p>
 
-  grid.innerHTML = images.map((img, i) => `
-    <div class="img-card">
-      <img src="${img.src}">
-      <div class="num">${i + 1}</div>
-      <button class="del" onclick="removeImg(${i})">×</button>
-    </div>
-  `).join('');
+<!-- IMAGE -->
+<input type="file" id="imageInput" accept="image/*">
 
-  if (images.length > 0) {
-    counter.style.display = 'flex';
-    countEl.textContent = images.length;
-  } else {
-    counter.style.display = 'none';
+<!-- PROMPT -->
+<input type="text" id="promptInput" placeholder="Describe animation (e.g. smile, zoom in)">
+
+<!-- MUSIC -->
+<select id="music">
+  <option>Cinematic</option>
+  <option>Upbeat</option>
+  <option>Calm</option>
+  <option>Romantic</option>
+</select>
+
+<!-- DURATION -->
+<select id="duration">
+  <option value="5">5 seconds</option>
+  <option value="10">10 seconds</option>
+  <option value="15">15 seconds</option>
+</select>
+
+<!-- QUANTITY -->
+<select id="quantity">
+  <option value="1">1 video</option>
+  <option value="3">3 videos</option>
+</select>
+
+<h2 id="price">Price: ₹199</h2>
+
+<button onclick="startPayment()">Generate Video</button>
+
+<img id="preview" style="display:none;">
+<a id="download" style="display:none;" download="video.mp4">Download Video</a>
+
+</div>
+
+<script>
+const BACKEND = "https://pixelreel.onrender.com";
+const KEY = "rzp_test_Shn8u2MBIVd6vS";
+
+let file = null;
+
+/* IMAGE PREVIEW */
+document.getElementById("imageInput").onchange = function(e){
+  file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    document.getElementById("preview").src = ev.target.result;
+    document.getElementById("preview").style.display = "block";
+  };
+  reader.readAsDataURL(file);
+};
+
+/* PRICE CALCULATION */
+function calculatePrice(){
+  const duration = parseInt(document.getElementById("duration").value);
+  const qty = parseInt(document.getElementById("quantity").value);
+
+  let price = 0;
+
+  if(qty === 1){
+    if(duration === 5) price = 199;
+    if(duration === 10) price = 499;
+    if(duration === 15) price = 999;
   }
 
-  document.getElementById('nextBtn1').disabled = images.length === 0;
-}
-
-function removeImg(i) {
-  images.splice(i, 1);
-  renderGrid();
-}
-
-function updateDuration(v) {
-  duration = parseInt(v);
-  document.getElementById('durationVal').textContent = v + 's';
-}
-
-function selectOpt(el, group, val) {
-  el.closest('.option-grid').querySelectorAll('.opt-card').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
-
-  if (group === 'music') selectedMusic = val;
-  if (group === 'trans') selectedTrans = val;
-}
-
-function selectPlan(plan) {
-  selectedPlan = plan;
-
-  document.getElementById('plan-single').classList.toggle('selected', plan === 'single');
-  document.getElementById('plan-monthly').classList.toggle('selected', plan === 'monthly');
-
-  document.getElementById('exportBtn').textContent =
-    plan === 'single' ? 'Export Video — ₹29' : 'Subscribe — ₹149/month';
-}
-
-function buildPreview() {
-  stopPlay();
-
-  document.getElementById('timelineFill').style.width = '0%';
-  document.getElementById('timeDisplay').textContent = '0:00';
-
-  if (images.length === 0) {
-    document.getElementById('previewEmpty').style.display = 'flex';
-    document.getElementById('previewImg').style.display = 'none';
-    return;
+  if(qty === 3){
+    if(duration === 5) price = 599;
+    if(duration === 10) price = 1099;
+    if(duration === 15) price = 1999;
   }
 
-  document.getElementById('previewEmpty').style.display = 'none';
-  document.getElementById('previewImg').style.display = 'block';
-  document.getElementById('previewImg').src = images[0].src;
-
-  const text = document.getElementById('textInput').value;
-  document.getElementById('previewOverlay').textContent = text || '';
+  document.getElementById("price").innerText = "Price: ₹" + price;
+  return price;
 }
 
-function showSlide(i) {
-  const idx = i % images.length;
-  document.getElementById('previewImg').src = images[idx].src;
-  currentSlide = idx;
-}
+document.getElementById("duration").onchange = calculatePrice;
+document.getElementById("quantity").onchange = calculatePrice;
 
-function togglePlay() {
-  if (images.length === 0) {
-    alert('Upload image first');
-    return;
-  }
-
-  if (isPlaying) {
-    stopPlay();
-    return;
-  }
-
-  isPlaying = true;
-  document.getElementById('playBtn').textContent = '⏸ Pause';
-
-  let elapsed = 0;
-  const total = images.length * duration;
-
-  playInterval = setInterval(() => {
-    elapsed += 0.1;
-
-    const pct = Math.min((elapsed / total) * 100, 100);
-    document.getElementById('timelineFill').style.width = pct + '%';
-
-    const slide = Math.floor(elapsed / duration);
-    if (slide !== currentSlide) showSlide(slide);
-
-    if (elapsed >= total) stopPlay();
-  }, 100);
-}
-
-function stopPlay() {
-  clearInterval(playInterval);
-  isPlaying = false;
-  document.getElementById('playBtn').textContent = '▶ Play';
-}
-
-function showStatus(msg, type) {
-  const box = document.getElementById('statusBox');
-  box.textContent = msg;
-  box.className = 'status-box ' + type + ' show';
-}
-
-async function createVideo(file) {
+/* CREATE VIDEO */
+async function createVideo(){
   const formData = new FormData();
+  formData.append("image", file);
+  formData.append("prompt", document.getElementById("promptInput").value);
+  formData.append("music", document.getElementById("music").value);
+  formData.append("duration", document.getElementById("duration").value);
 
-  formData.append('image', file);
-  formData.append('prompt', document.getElementById('promptInput').value);
-
-  const res = await fetch(BACKEND + '/generate-video', {
-    method: 'POST',
-    body: formData
+  const res = await fetch(BACKEND + "/generate-video", {
+    method:"POST",
+    body:formData
   });
-
-  if (!res.ok) {
-    throw new Error('Video generation failed');
-  }
 
   const data = await res.json();
   return data.url;
 }
 
-async function handleExport() {
-  if (images.length === 0) {
-    showStatus('Please upload an image first.', 'error');
+/* PAYMENT */
+async function startPayment(){
+  if(!file){
+    alert("Upload image first");
     return;
   }
 
-  const amount = selectedPlan === 'single' ? 2900 : 14900;
+  const price = calculatePrice();
+  const amount = price * 100;
 
-  try {
-    const orderRes = await fetch(BACKEND + '/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount })
-    });
+  const orderRes = await fetch(BACKEND + "/create-order", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ amount })
+  });
 
-    const order = await orderRes.json();
+  const order = await orderRes.json();
 
-    const options = {
-      key: RZP_KEY,
-      amount: order.amount,
-      currency: 'INR',
-      name: 'PixelReel',
-      description: 'Video Export',
-      order_id: order.id,
+  const options = {
+    key: KEY,
+    amount: order.amount,
+    currency: "INR",
+    name: "PixelReel",
+    order_id: order.id,
 
-      handler: async function () {
-        document.getElementById('processingOverlay').classList.add('show');
-        document.getElementById('exportBtn').disabled = true;
+    handler: async function(){
+      const url = await createVideo();
 
-        try {
-          const url = await createVideo(images[0].file);
+      document.getElementById("download").href = url;
+      document.getElementById("download").style.display = "block";
+      document.getElementById("download").innerText = "Download Video";
+    }
+  };
 
-          document.getElementById('processingOverlay').classList.remove('show');
-          document.getElementById('downloadBox').style.display = 'block';
-          document.getElementById('downloadLink').href = url;
-
-          showStatus('Video ready!', 'info');
-
-        } catch (err) {
-          document.getElementById('processingOverlay').classList.remove('show');
-          showStatus('Video failed.', 'error');
-          document.getElementById('exportBtn').disabled = false;
-        }
-      },
-
-      theme: { color: '#00e5a0' }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
-
-  } catch (err) {
-    showStatus('Server error. Try again.', 'error');
-  }
+  const rzp = new Razorpay(options);
+  rzp.open();
 }
 
-/* drag drop */
-const dropZone = document.getElementById('dropZone');
-
-dropZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  dropZone.style.borderColor = 'var(--accent)';
-});
-
-dropZone.addEventListener('dragleave', () => {
-  dropZone.style.borderColor = 'var(--border)';
-});
-
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.style.borderColor = 'var(--border)';
-  handleFiles(e.dataTransfer.files);
-});
+/* INIT */
+calculatePrice();
 </script>
+
+</body>
+</html>
