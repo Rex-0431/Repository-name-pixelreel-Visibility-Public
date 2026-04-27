@@ -1173,8 +1173,7 @@
           document.getElementById('processingOverlay').classList.add('show');
           document.getElementById('exportBtn').disabled = true;
           try {
-            const files = await uploadImages();
-            const url = await createVideo(files);
+            const url = await createVideo(images[0].file););
             videoUrl = url;
             document.getElementById('processingOverlay').classList.remove('show');
             document.getElementById('downloadBox').style.display = 'block';
